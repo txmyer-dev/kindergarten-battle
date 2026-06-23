@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KINDERGARTEN SWARM: 40x25 CLASSROOM BATTLE</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <!-- Inline favicon to avoid 404 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏫</text></svg>">
+  </head>
+  <body>
+    <div id="app">
+      <div id="game-container">
+        
+        <!-- Screen Overlay for Start Game -->
+        <div id="start-screen" class="screen-overlay active">
+          <div class="glow-container">
+            <h1 class="neon-title" data-text="KINDERGARTEN SWARM">KINDERGARTEN SWARM</h1>
+            <p class="subtitle">Inspired by Smosh Pit: "Would you win this battle?"</p>
+            
+            <div class="rules-box">
+              <h3>🚨 THE STIPULATIONS</h3>
+              <ul>
+                <li>Wave release: <strong>5 aggressive kindergarteners every 30 seconds</strong>.</li>
+                <li>Goal: Keep moving and strike them down. If they dog-pile you, shake them off!</li>
+                <li>Defeat: If they pin you to the ground for <strong>15 consecutive seconds</strong>, you lose.</li>
+                <li>Weapons: Unarmed, but in Easy/Medium mode you can pick up and throw classroom desks and chairs!</li>
+              </ul>
+            </div>
+
+            <div class="difficulty-section">
+              <h3>SELECT DIFFICULTY</h3>
+              <div class="difficulty-buttons">
+                <button class="diff-btn" data-diff="easy">
+                  <span class="btn-title">EASY</span>
+                  <span class="btn-desc">Lots of desks & chairs to grab and throw.</span>
+                </button>
+                <button class="diff-btn active" data-diff="medium">
+                  <span class="btn-title">MEDIUM</span>
+                  <span class="btn-desc">Fewer objects. Moderate challenge.</span>
+                </button>
+                <button class="diff-btn" data-diff="hard">
+                  <span class="btn-title">HARD</span>
+                  <span class="btn-desc">EMPTY CLASSROOM (Smosh Standard). No objects. Just hands.</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="controls-guide">
+              <div class="control-key"><span>W</span><span>A</span><span>S</span><span>D</span> or <span>▲</span><span>▼</span><span>◀</span><span>▶</span> Move</div>
+              <div class="control-key"><span>Space</span> Strike (Punch/Kick)</div>
+              <div class="control-key"><span>E</span> or <span>F</span> Grab / Throw Object</div>
+              <div class="control-key"><span>Shift</span> Spin Kick (Cooldown: 8s)</div>
+            </div>
+
+            <button id="btn-start" class="btn-neon-action">INITIALIZE INTERACTIVE SIMULATION</button>
+          </div>
+        </div>
+
+        <!-- HUD Bar -->
+        <div id="hud-bar">
+          <div class="hud-item">
+            <span class="hud-label">WAVE</span>
+            <span id="hud-wave" class="hud-value neon-blue">01</span>
+          </div>
+          <div class="hud-item">
+            <span class="hud-label">NEXT SWARM</span>
+            <span id="hud-timer" class="hud-value neon-red">30.0s</span>
+          </div>
+          <div class="hud-item">
+            <span class="hud-label">KOs</span>
+            <span id="hud-kos" class="hud-value neon-green">0</span>
+          </div>
+          <div class="hud-item">
+            <span class="hud-label">GRAPPLING</span>
+            <span id="hud-grappling" class="hud-value neon-orange">0</span>
+          </div>
+          <div class="hud-item">
+            <span class="hud-label">TIME</span>
+            <span id="hud-survival-time" class="hud-value">00:00</span>
+          </div>
+        </div>
+
+        <!-- Game Canvas Viewport -->
+        <div id="canvas-wrapper">
+          <canvas id="game-canvas" width="1000" height="625"></canvas>
+          
+          <!-- Flashing Alert for Pinned State -->
+          <div id="pinned-alert" class="">
+            <div class="alert-title">🚨 PINNED 🚨</div>
+            <div class="alert-sub">MASH KEYS OR SPIN KICK TO BREAK FREE!</div>
+            <div id="pinned-countdown">15.00s</div>
+            <div class="alert-progress-bar"><div id="alert-progress-fill"></div></div>
+          </div>
+        </div>
+
+        <!-- Cooldown Indicators & Special UI -->
+        <div id="footer-ui">
+          <div class="cooldown-item" id="cooldown-spin">
+            <span class="cd-key">SHIFT</span>
+            <span class="cd-label">SPIN KICK</span>
+            <div class="cd-bar-container"><div class="cd-bar" id="cd-spin-bar"></div></div>
+          </div>
+          
+          <div class="cooldown-item" id="object-held-indicator">
+            <span class="cd-key">E / F</span>
+            <span id="held-object-text" class="cd-label">EMPTY HANDS</span>
+          </div>
+          
+          <div class="cooldown-item sound-toggle-container">
+            <button id="btn-sound-toggle" class="btn-sound font-arcade">SOUND: ON</button>
+          </div>
+        </div>
+
+        <!-- Screen Overlay for Game Over -->
+        <div id="game-over-screen" class="screen-overlay">
+          <div class="glow-container">
+            <h1 class="neon-title red-glow" data-text="OVERPOWERED">OVERPOWERED</h1>
+            <p class="subtitle red-text">You were pinned to the classroom floor for 15 seconds.</p>
+
+            <div class="stats-panel">
+              <div class="stat-row">
+                <span>DIFFICULTY LEVEL:</span>
+                <span id="result-diff" class="neon-blue">MEDIUM</span>
+              </div>
+              <div class="stat-row">
+                <span>WAVES COMPLETED:</span>
+                <span id="result-waves" class="neon-blue">0</span>
+              </div>
+              <div class="stat-row">
+                <span>KINDERGARTENERS KO'd:</span>
+                <span id="result-kos" class="neon-green">0</span>
+              </div>
+              <div class="stat-row">
+                <span>TIME SURVIVED:</span>
+                <span id="result-time" class="neon-orange">01:42</span>
+              </div>
+            </div>
+
+            <button id="btn-restart" class="btn-neon-action red-btn">RE-RUN INITIALIZATION</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

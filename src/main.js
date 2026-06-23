@@ -304,18 +304,21 @@ const DIFFICULTY_CONFIGS = {
     grabSlowdown: 0.18, // 18% speed penalty per kindergartener
     spawnSpeed: 2.0,    // Base speed of kids
     hpMultiplier: 0.8,
+    waveInterval: 30.0,
   },
   medium: {
     objectCount: 8,
     grabSlowdown: 0.25, // 25% speed penalty per kindergartener
     spawnSpeed: 2.4,
     hpMultiplier: 1.0,
+    waveInterval: 23.0,
   },
   hard: {
     objectCount: 0,     // Absolutely empty classroom!
     grabSlowdown: 0.33, // 33% speed penalty per kindergartener (3 kids fully immobolizes!)
     spawnSpeed: 2.8,
     hpMultiplier: 1.2,
+    waveInterval: 16.0,
   }
 };
 
@@ -1428,7 +1431,7 @@ function updateGame(timestamp) {
 
   if (waveTimer <= 0) {
     wave++;
-    waveTimer = 30.0;
+    waveTimer = config.waveInterval;
     spawnWave();
   }
   document.getElementById('hud-timer').innerText = `${waveTimer.toFixed(1)}s`;
@@ -1518,7 +1521,7 @@ function startGame() {
   // Reset stats
   gameTime = 0;
   wave = 1;
-  waveTimer = 30.0;
+  waveTimer = config.waveInterval;
   kos = 0;
   pinSeconds = 0.0;
   lastTime = 0;

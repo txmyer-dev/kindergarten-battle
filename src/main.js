@@ -607,6 +607,8 @@ class Player {
     this.facingAngle = 0;
     
     // Combat
+    this.stamina = 100;
+    this.maxStamina = 100;
     this.attackCooldown = 0; // Cooldown frames for basic punch
     this.strikeTime = 0; // Animation frame timer for visual strike sweep
     this.spinCooldown = 0; // Cooldown for spin kick (frames)
@@ -617,11 +619,14 @@ class Player {
     this.trail = [];
   }
 
-  update(config) {
+  update(config, dt) {
     // 1. Calculate grappling speed multiplier
     const grappleCount = getGrapplingCount();
     const penalty = config.grabSlowdown;
     const currentSpeed = Math.max(0, this.baseSpeed * (1.0 - grappleCount * penalty));
+
+    // Regenerate stamina (25 per second)
+    this.stamina = Math.min(this.maxStamina, this.stamina + 25 * dt);
 
     // Disable control if completely pinned (3+ grabbers in Hard/Medium generally stops you)
     let moveX = 0;
@@ -709,10 +714,20 @@ class Player {
   punch() {
     if (this.attackCooldown > 0 || this.isSpinning) return;
     
-    // 1. Basic Punch logic
-    this.attackCooldown = 22; // 22 frames cooldown (~0.35s)
-    this.strikeTime = 8; // Punch arc drawn for 8 frames
+    // Check stamina (cost: 12)
+    const punchCost = 12;
+    const hasStamina = this.stamina >= punchCost;
     
+    if (hasStamina) {
+      this.stamina -= punchCost;
+      this.attackCooldown = 20; // 20 frames cooldown (~0.33s)
+    } else {
+      // Out of stamina: slow down attack and halve damage
+      this.attackCooldown = 42; // ~0.7s cooldown
+      floatingTexts.push(new FloatingText(this.x, this.y - 30, 'EXHAUSTED', '#ff0055'));
+    }
+    
+    this.strikeTime = 8; // Punch arc drawn for 8 frames
     audio.playPunch();
 
     // Damage area check (frontal arc of 100 degrees, radius 75px)
@@ -721,11 +736,11 @@ class Player {
     const maxAngle = this.facingAngle + 1.0;
 
     let hitRegistered = false;
+    const damage = hasStamina ? 34 : 17; // half damage if exhausted
 
     enemies.forEach((enemy) => {
       if (enemy.state === 'GRAPPLING') {
         // Can always hit enemies that are grappling onto you
-        const damage = 34;
         enemy.takeDamage(damage);
         hitRegistered = true;
       } else {
@@ -739,8 +754,7 @@ class Player {
 
           if (Math.abs(angleDiff) <= 1.0) {
             // Register Hit!
-            const damage = 34;
-            const knockbackPower = 6.5;
+            const knockbackPower = hasStamina ? 6.5 : 3.0; // weaker knockback if exhausted
             enemy.takeDamage(damage, Math.cos(angleToEnemy) * knockbackPower, Math.sin(angleToEnemy) * knockbackPower);
             hitRegistered = true;
           }
@@ -898,6 +912,15 @@ class Player {
       c.stroke();
       c.restore();
     }
+
+    // Draw stamina bar beneath the player
+    c.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    c.fillRect(-20, PLAYER_RADIUS + 8, 40, 4);
+    
+    // Glowing yellow stamina bar
+    c.fillStyle = this.stamina < 12 ? varColor('neon-red') : '#ffd700';
+    const staminaWidth = (this.stamina / this.maxStamina) * 40;
+    c.fillRect(-20, PLAYER_RADIUS + 8, Math.max(0, staminaWidth), 4);
 
     c.restore();
 
@@ -1137,11 +1160,11 @@ function spawnWave() {
   const hpBase = 100 * config.hpMultiplier;
   
   // Wave difficulty scaling
-  const speedScale = config.spawnSpeed + (wave * 0.08);
-  const hpScale = hpBase + (wave - 1) * 12;
-
-  // Spawn count by difficulty
-  const spawnCount = config.spawnCount;
+  const speedScale = config.spawnSpeed + (wave * 0.1);
+  const hpScale = (hpBase + (wave - 1) * 12) * (1.0 + (wave - 1) * 0.04);
+ 
+  // Dynamic opponent count: add +1 kindergartener for every 2 waves survived
+  const spawnCount = config.spawnCount + Math.floor((wave - 1) / 2);
 
   for (let i = 0; i < spawnCount; i++) {
     // Pick door randomly
@@ -1436,7 +1459,8 @@ function updateGame(timestamp) {
 
   if (waveTimer <= 0) {
     wave++;
-    waveTimer = config.waveInterval;
+    // Wave spawn rate acceleration (decreases by 0.5s per wave down to a minimum of 8s)
+    waveTimer = Math.max(8.0, config.waveInterval - (wave - 1) * 0.5);
     spawnWave();
   }
   document.getElementById('hud-timer').innerText = `${waveTimer.toFixed(1)}s`;
@@ -1444,7 +1468,7 @@ function updateGame(timestamp) {
   document.getElementById('hud-kos').innerText = kos;
 
   // 2. Spawn entities updates
-  player.update(config);
+  player.update(config, dt);
   
   enemies.forEach(e => e.update());
   objects.forEach(o => o.update());

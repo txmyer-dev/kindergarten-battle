@@ -1416,6 +1416,8 @@ function updateGame(timestamp) {
 
   if (gameState !== 'PLAYING') return;
 
+  const config = DIFFICULTY_CONFIGS[selectedDifficulty];
+
   // Apply screen shake vectors
   applyCameraEffects();
 
@@ -1439,7 +1441,6 @@ function updateGame(timestamp) {
   document.getElementById('hud-kos').innerText = kos;
 
   // 2. Spawn entities updates
-  const config = DIFFICULTY_CONFIGS[selectedDifficulty];
   player.update(config);
   
   enemies.forEach(e => e.update());

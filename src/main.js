@@ -305,6 +305,7 @@ const DIFFICULTY_CONFIGS = {
     spawnSpeed: 2.0,    // Base speed of kids
     hpMultiplier: 0.8,
     waveInterval: 30.0,
+    spawnCount: 5,
   },
   medium: {
     objectCount: 8,
@@ -312,6 +313,7 @@ const DIFFICULTY_CONFIGS = {
     spawnSpeed: 2.4,
     hpMultiplier: 1.0,
     waveInterval: 23.0,
+    spawnCount: 6,
   },
   hard: {
     objectCount: 0,     // Absolutely empty classroom!
@@ -319,6 +321,7 @@ const DIFFICULTY_CONFIGS = {
     spawnSpeed: 2.8,
     hpMultiplier: 1.2,
     waveInterval: 16.0,
+    spawnCount: 7,
   }
 };
 
@@ -1137,8 +1140,8 @@ function spawnWave() {
   const speedScale = config.spawnSpeed + (wave * 0.08);
   const hpScale = hpBase + (wave - 1) * 12;
 
-  // Always spawn 5 kindergarteners (the core video stipulation)
-  const spawnCount = 5;
+  // Spawn count by difficulty
+  const spawnCount = config.spawnCount;
 
   for (let i = 0; i < spawnCount; i++) {
     // Pick door randomly

@@ -1567,6 +1567,8 @@ function startGame() {
   requestAnimationFrame(updateGame);
 }
 
+let calculatedFinalScore = 0;
+
 function endGame() {
   gameState = 'GAME_OVER';
   audio.playGameOver();
@@ -1578,8 +1580,30 @@ function endGame() {
   
   const mins = Math.floor(gameTime / 60);
   const secs = Math.floor(gameTime % 60);
-  document.getElementById('result-time').innerText = 
-    `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  const formattedTime = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  document.getElementById('result-time').innerText = formattedTime;
+
+  // Calculate score
+  const diffMultiplier = selectedDifficulty === 'easy' ? 0.5 : (selectedDifficulty === 'hard' ? 2.0 : 1.0);
+  calculatedFinalScore = Math.floor(((kos * 100) + ((wave - 1) * 500) + (gameTime * 10)) * diffMultiplier);
+
+  // Check if it qualifies for top 5 high scores
+  const scores = getHighScores();
+  const lowestScore = scores.length >= 5 ? scores[scores.length - 1].score : 0;
+
+  if (calculatedFinalScore > lowestScore || scores.length < 5) {
+    // Show initials submission input
+    document.getElementById('btn-restart').classList.add('hidden');
+    document.getElementById('high-score-input-container').classList.remove('hidden');
+    document.getElementById('player-initials').value = '';
+    setTimeout(() => {
+      document.getElementById('player-initials').focus();
+    }, 120);
+  } else {
+    // Standard flow
+    document.getElementById('btn-restart').classList.remove('hidden');
+    document.getElementById('high-score-input-container').classList.add('hidden');
+  }
 
   // Swap Screen overlays
   gameOverScreen.classList.add('active');
@@ -1612,3 +1636,75 @@ btnSoundToggle.addEventListener('click', () => {
     btnSoundToggle.classList.remove('muted');
   }
 });
+
+// ==========================================
+// 🏆 LEADERBOARD SYSTEM (localStorage)
+// ==========================================
+function getHighScores() {
+  const scores = localStorage.getItem('kindergarten_highscores');
+  return scores ? JSON.parse(scores) : [
+    { name: "SMO", score: 5000, difficulty: "hard", waves: 4, kos: 20, time: "01:04" },
+    { name: "PIT", score: 3500, difficulty: "medium", waves: 3, kos: 15, time: "01:09" },
+    { name: "KID", score: 2000, difficulty: "easy", waves: 2, kos: 10, time: "01:00" }
+  ];
+}
+
+function saveHighScores(scores) {
+  localStorage.setItem('kindergarten_highscores', JSON.stringify(scores));
+}
+
+function renderLeaderboard() {
+  const scores = getHighScores();
+  const tbody = document.getElementById('leaderboard-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  
+  scores.forEach((entry, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="neon-blue font-arcade" style="font-size: 0.65rem;">0${index + 1}</td>
+      <td class="font-arcade" style="font-size: 0.65rem; color: #fff;">${entry.name}</td>
+      <td class="font-arcade" style="font-size: 0.55rem; color: ${entry.difficulty === 'hard' ? varColor('neon-red') : (entry.difficulty === 'easy' ? varColor('neon-blue') : varColor('neon-orange'))};">${entry.difficulty.toUpperCase()}</td>
+      <td>${entry.waves}</td>
+      <td>${entry.kos}</td>
+      <td class="neon-green">${entry.score}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Submit High Score handler
+document.getElementById('btn-submit-score').addEventListener('click', () => {
+  const initialsInput = document.getElementById('player-initials');
+  let initials = initialsInput.value.trim().toUpperCase();
+  if (initials.length === 0) initials = "AAA";
+  if (initials.length > 3) initials = initials.substring(0, 3);
+
+  const mins = Math.floor(gameTime / 60);
+  const secs = Math.floor(gameTime % 60);
+  const formattedTime = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+  const newEntry = {
+    name: initials,
+    score: calculatedFinalScore,
+    difficulty: selectedDifficulty,
+    waves: wave - 1,
+    kos: kos,
+    time: formattedTime
+  };
+
+  const scores = getHighScores();
+  scores.push(newEntry);
+  scores.sort((a, b) => b.score - a.score);
+  if (scores.length > 5) scores.pop();
+
+  saveHighScores(scores);
+  renderLeaderboard();
+
+  // Hide input container, restore play again button
+  document.getElementById('high-score-input-container').classList.add('hidden');
+  document.getElementById('btn-restart').classList.remove('hidden');
+});
+
+// Render leaderboard initially
+renderLeaderboard();

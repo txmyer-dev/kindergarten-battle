@@ -58,6 +58,27 @@
               <div class="control-key"><span>Shift</span> Spin Kick (Cooldown: 8s)</div>
             </div>
 
+            <div class="leaderboard-section">
+              <h3>🏆 HIGH SCORE SIMULATIONS</h3>
+              <div class="leaderboard-table-wrapper">
+                <table id="leaderboard-table">
+                  <thead>
+                    <tr>
+                      <th>RANK</th>
+                      <th>NAME</th>
+                      <th>DIFF</th>
+                      <th>WAVES</th>
+                      <th>KOs</th>
+                      <th>SCORE</th>
+                    </tr>
+                  </thead>
+                  <tbody id="leaderboard-body">
+                    <!-- populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             <button id="btn-start" class="btn-neon-action">INITIALIZE INTERACTIVE SIMULATION</button>
           </div>
         </div>
@@ -139,6 +160,15 @@
               <div class="stat-row">
                 <span>TIME SURVIVED:</span>
                 <span id="result-time" class="neon-orange">01:42</span>
+              </div>
+            </div>
+
+            <div id="high-score-input-container" class="hidden">
+              <h3 class="neon-orange text-glow">NEW HIGH SCORE!</h3>
+              <p class="input-prompt">Enter initials to record your simulation run:</p>
+              <div class="name-input-row">
+                <input type="text" id="player-initials" maxlength="3" placeholder="AAA" />
+                <button id="btn-submit-score" class="btn-neon-action orange-btn">SUBMIT</button>
               </div>
             </div>
 
